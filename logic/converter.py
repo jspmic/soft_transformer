@@ -101,6 +101,7 @@ class Converter:
         depart, colline = self.reader.get_column("stock central depart")-1, \
                 self.reader.get_column("colline")-1
         numero_mvt = self.reader.get_column("numero du mouvement")-1
+        district = self.reader.get_column("district")-1
 
         from_to: dict = dict()
 
