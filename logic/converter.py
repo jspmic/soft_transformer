@@ -67,6 +67,13 @@ class Reader:
 
         return cells
 
+    def write_from_to(self, row: int, _from: str, _to: str) -> None:
+        from_col, to_col = self.map["from"], self.map["to"]
+        from_letter, to_letter = get_column_letter(from_col), \
+                get_column_letter(to_col)
+        self.sheet[f"{from_letter}{row}"] = _from
+        self.sheet[f"{to_letter}{row}"] = _to
+
 
 class Converter:
     def __init__(self, excel_path: str, coordinates_path: str) -> None:
@@ -79,6 +86,10 @@ class Converter:
         fmt = r"stock.+central(.+)"
         new_name = re.split(fmt, stock)[1].strip()
         return new_name.capitalize()
+
+    def test(self) -> None:
+        print(self.reader.get_row(1))
+        print(self.reader.get_row(2))
 
     # Link the tuple (a,b) to a string 'a_b'
     def link_from_to(self, from_to: tuple) -> str:
@@ -93,13 +104,14 @@ class Converter:
 
         from_to: dict = dict()
 
-        current_row = 1
+        current_row = 2
+        reading_row = 1
         last_colline = ""
         last_numero_mvt = -1
-        for _row in range(2, 16):
+        for _row in range(current_row, 16):
             row = self.reader.get_row(_row)
             if row[numero_mvt] != last_numero_mvt:
-                current_row = 1
+                reading_row = 1
                 last_colline = ""
                 last_numero_mvt = row[numero_mvt]
 
@@ -107,14 +119,20 @@ class Converter:
             if row[numero_mvt] is None:
                 continue
 
-            if current_row == 1:
+            _colline = row[colline]
+            if reading_row == 1:
+                _stock = self.purify_stocks(row[depart])
                 from_to[last_numero_mvt] = from_to.get(last_numero_mvt, []) +\
-                        [(self.purify_stocks(row[depart]), row[colline])]
+                        [(self.purify_stocks(row[depart]), colline)]
+                self.reader.write_from_to(_row, _stock, _colline)
             else:
-                from_to[last_numero_mvt] = from_to.get(last_numero_mvt, []) + [(last_colline, row[colline])]
+                from_to[last_numero_mvt] = from_to.get(last_numero_mvt, []) + [(last_colline, colline)]
+                self.reader.write_from_to(_row, last_colline, _colline)
 
             last_colline = row[colline]
             current_row += 1
+            reading_row += 1
+        self.reader.workbook.save("/home/jaspe/hello.xlsx")
 
         return from_to
 
