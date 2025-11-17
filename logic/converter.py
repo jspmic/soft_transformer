@@ -28,8 +28,9 @@ class Loader:
 # Reader class
 # @brief: This class reads the file given by the converter and processes it
 class Reader:
-    def __init__(self, excel_path: str) -> None:
+    def __init__(self, excel_path: str, output_path: str="") -> None:
         self.file_path = excel_path
+        self.output = output_path
         self.workbook = openpyxl.load_workbook(self.file_path)
         self.sheet = self.workbook.active
         self.rows = self.sheet.max_row
@@ -42,7 +43,7 @@ class Reader:
         self.sheet[f"{col_letter}1"] = "From"
         self.sheet[f"{col_letter_next}1"] = "To"
 
-        self.workbook.save("/home/jaspe/hello.xlsx")
+        self.workbook.save(self.output)
 
         self.columns += 2
         self.map: dict = dict()  # Map containing a certain field(string) with it's column number
@@ -76,9 +77,9 @@ class Reader:
 
 
 class Converter:
-    def __init__(self, excel_path: str, coordinates_path: str) -> None:
+    def __init__(self, excel_path: str, output_path, coordinates_path: str) -> None:
         self.loader: Loader = Loader(coordinates_path)
-        self.reader: Reader = Reader(excel_path)
+        self.reader: Reader = Reader(excel_path, output_path)
         self.reader.complete_map()
 
     def purify_stocks(self, _stock: str) -> str:
@@ -109,7 +110,7 @@ class Converter:
         reading_row = 1
         last_colline = ""
         last_numero_mvt = -1
-        for _row in range(current_row, 16):
+        for _row in range(current_row, self.reader.rows+1):
             row = self.reader.get_row(_row)
             if row[numero_mvt] != last_numero_mvt:
                 reading_row = 1
@@ -133,7 +134,7 @@ class Converter:
             last_colline = row[colline]
             current_row += 1
             reading_row += 1
-        self.reader.workbook.save("/home/jaspe/hello.xlsx")
+        self.reader.workbook.save(self.reader.output)
 
         return from_to
 
